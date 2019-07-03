@@ -1,0 +1,44 @@
+#!/bin/bash
+#To install Talend automatically
+service_file=/etc/systemd/system/Talend-JobServer.service
+talend_dir=/opt/talend/7.1.1/jobserver/agent
+java_dir=/usr/java/zulu_java1.8
+if [ -f $service_file ];then
+	echo "Talend was installed on this server"
+	break
+else
+	touch $service_file
+        cat > $service_file <<EOF 
+[Unit]
+Description=Talend JobServer Service
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/talend/7.1.1/jobserver/agent
+ExecStart=/bin/bash start_rs.sh
+ExecStop=/bin/bash stop_rs.sh
+Type=simple
+
+[Install]
+WantedBy=default.target
+EOF
+        echo "service file created"
+	mkdir -p $talend_dir
+	mkdir -p $java_dir
+	unzip /tmp/Talend-JobServer-20181026_1147-V7.1.1.zip
+	tar -xzf  /tmp/zulu8.36.0.1-ca-jdk8.0.202-linux_x64.tar.gz
+	cp -r /tmp/Talend-JobServer-20181026_1147-V7.1.1/* $talend_dir
+	cp -r /tmp/zulu8.36.0.1-ca-jdk8.0.202-linux_x64/* $java_dir
+	ln -sf $java_dir/bin/java /etc/alternatives/java
+	ln -sf $java_dir/bin/jar /usr/bin/jar
+	ls $talend_dir
+fi
+value=`echo $?`
+if [ $value -eq 0 ];then
+	systemctl start Talend-JobServer.service
+	java -version
+	echo "Talend installed successfully"
+else
+	echo "please check again"
+fi
+
